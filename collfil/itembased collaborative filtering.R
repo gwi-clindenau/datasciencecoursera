@@ -9,7 +9,7 @@ data.germany.ibs <- (data.germany[,!(names(data.germany) %in% c("user"))])
 # Create a helper function to calculate the cosine between two vectors
 getCosine <- function(x,y) 
 {
-  this.cosine <- sum(x*y) / (sqrt(sum(x*x)) * sqrt(sum(y*y)))
+this.cosine <- sum(x*y) / (sqrt(sum(x*x)) * sqrt(sum(y*y)))
   return(this.cosine)
 }
 
@@ -36,4 +36,4 @@ data.germany.neighbours <- matrix(NA, nrow=ncol(data.germany.ibs.similarity),nco
 for(i in 1:ncol(data.germany.ibs)) {
   data.germany.neighbours[i,] <- (t(head(n=11,rownames(data.germany.ibs.similarity[order(data.germany.ibs.similarity[,i],decreasing=TRUE),][i]))))
 }
-  
+
