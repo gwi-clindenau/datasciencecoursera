@@ -1,4 +1,4 @@
-# needed packages
+# Initialization
 install.packages("dplyr")
 install.packages("tidyverse")
 install.packeges("readr")
@@ -51,3 +51,4 @@ extracted_data <- select(all_data, Subject, Activity, contains("mean()") | conta
 
 # create a second, independent tidy data set with the average of each variable for each activity and each subject.
 averages <- extracted_data %>% group_by(Subject, Activity) %>% summarise_all(list(mean))
+write.table(averages, file = "average.txt", row.names = FALSE)
