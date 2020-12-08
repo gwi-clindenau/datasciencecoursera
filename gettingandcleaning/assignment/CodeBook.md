@@ -1,36 +1,76 @@
 CodeBook 
 =================
 
-The features selected for this database come from the accelerometer and gyroscope 3-axial raw signals tAcc-XYZ and tGyro-XYZ. These time domain signals (prefix 't' to denote time) were captured at a constant rate of 50 Hz. Then they were filtered using a median filter and a 3rd order low pass Butterworth filter with a corner frequency of 20 Hz to remove noise. Similarly, the acceleration signal was then separated into body and gravity acceleration signals (tBodyAcc-XYZ and tGravityAcc-XYZ) using another low pass Butterworth filter with a corner frequency of 0.3 Hz. 
+## Initialization
 
-Subsequently, the body linear acceleration and angular velocity were derived in time to obtain Jerk signals (tBodyAccJerk-XYZ and tBodyGyroJerk-XYZ). Also the magnitude of these three-dimensional signals were calculated using the Euclidean norm (tBodyAccMag, tGravityAccMag, tBodyAccJerkMag, tBodyGyroMag, tBodyGyroJerkMag). 
+```{r}
+install.packages("dplyr")
+install.packages("tidyverse")
+install.packeges("readr")
+library("dplyr")
+library("tidyverse")
+library("readr")
+```
 
-Finally a Fast Fourier Transform (FFT) was applied to some of these signals producing fBodyAcc-XYZ, fBodyAccJerk-XYZ, fBodyGyro-XYZ, fBodyAccJerkMag, fBodyGyroMag, fBodyGyroJerkMag. (Note the 'f' to indicate frequency domain signals). 
+##  check for existing data and download data if not existing
+```{r}
+fileURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+destfile <- "./data/getdata_projectfiles_UCI HAR Dataset.zip"
+folder <- "./data/UCI HAR Dataset"
+if (!file.exists(destfile)) { 
+  download.file(fileURL, destfile = destfile)
+}
+if (!file.exists(folder)) {
+  unzip(destfile, exdir = "./data/")
+}
+rm(fileURL, destfile, folder)
+```
 
-These signals were used to estimate variables of the feature vector for each pattern:  
-'-XYZ' is used to denote 3-axial signals in the X, Y and Z directions.
+## read data to environment
+```{r}
+subject_test <- read_tsv("./data/UCI HAR Dataset/test/subject_test.txt", col_names = FALSE)
+subject_train <- read_tsv("./data/UCI HAR Dataset/train/subject_train.txt", col_names = FALSE)
+features <- read_tsv("./data/UCI HAR Dataset/features.txt", col_names = FALSE)
+features <- as.vector(features$X1)
+X_test <- read_table2("./data/UCI HAR Dataset/test/X_test.txt", col_names = features, na = "NA", )
+y_test <- read_tsv("./data/UCI HAR Dataset/test/y_test.txt", col_names = "Activity ID")
+X_train <- read_table2("./data/UCI HAR Dataset/train/X_train.txt", col_names = features, na = "NA", )
+y_train <- read_tsv("./data/UCI HAR Dataset/train/y_train.txt", col_names = "Activity ID")
+activity_labels <- read_table2("./data/UCI HAR Dataset/activity_labels.txt", col_names = FALSE) 
+```
 
-tBodyAcc-XYZ
-tGravityAcc-XYZ
-tBodyAccJerk-XYZ
-tBodyGyro-XYZ
-tBodyGyroJerk-XYZ
-tBodyAccMag
-tGravityAccMag
-tBodyAccJerkMag
-tBodyGyroMag
-tBodyGyroJerkMag
-fBodyAcc-XYZ
-fBodyAccJerk-XYZ
-fBodyGyro-XYZ
-fBodyAccMag
-fBodyAccJerkMag
-fBodyGyroMag
-fBodyGyroJerkMag
+## Use descriptive activity names to name the activities in the data set
+```{r}
+colnames(activity_labels) <- c("Activity ID", "Activity")
+activitys_test <- inner_join(y_test, activity_labels)
+activitys_train <- inner_join(y_train, activity_labels)
+```
 
-The set of variables that were estimated from these signals are: 
+## Join Subject, activity names and data
+```{r}
+test <- data.frame(subject_test$X1, activitys_test$Activity, X_test)
+train <- data.frame(subject_train$X1, activitys_train$Activity, X_train)
+```
 
-mean(): Mean value
-std(): Standard deviation
+## Appropriately label the data set with descriptive variable names.
+```{r}
+columns <- c("Subject", "Activity", features)
+colnames(test) <- columns
+colnames(train) <- columns
+```
 
-From the original data there is been created a joined data set with all test and training data. This data is grouped by subject and activity to summarise the means of all variables per subject and activity.
+## Merge the training and the test sets to create one data set.
+```{r}
+all_data <- rbind(test, train)
+```
+
+## Extract only the measurements on the mean and standard deviation for each measurement.
+```{r}
+extracted_data <- select(all_data, Subject, Activity, contains("mean()") | contains("std()"))
+```
+
+## create a second, independent tidy data set with the average of each variable for each activity and each subject.
+```{r}
+averages <- extracted_data %>% group_by(Subject, Activity) %>% summarise_all(list(mean))
+write.table(averages, file = "average.txt", row.names = FALSE)
+```
